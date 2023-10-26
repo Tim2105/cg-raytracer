@@ -247,10 +247,49 @@ bool Raytracer::intersect_scene(const Ray& ray, Material& intersection_material,
 
 //-----------------------------------------------------------------------------
 
+bool Raytracer::shadow(const vec3& point, const vec3& light) {
+    Ray shadowRay(point, light - point);
+    Material temp;
+    vec3 intersection;
+    vec3 intersectionNormal;
+    double t = -1.0;
+    double distanceSq = normSq(point - light);
+
+    intersect_scene(shadowRay, temp, intersection, intersectionNormal, t);
+
+    return t > 0.0 && distanceSq > t * t;
+}
+
 vec3 Raytracer::lighting(const vec3& point, const vec3& normal,
                          const vec3& view, const Material& material)
 {
     vec3 color(0.0, 0.0, 0.0);
+ 
+    color += ambience_ * material.ambient;
+
+    for(Light light: lights_) {
+        if(shadow(point, light.position))
+            continue;
+
+        vec3 l = normalize(light.position - point);
+        double cosTheta = dot(normal, l);
+
+        vec3 diffColor(0.0);
+        vec3 specColor(0.0);
+
+        if(cosTheta >= 0.0) {
+            diffColor += material.diffuse * cosTheta;
+
+            vec3 r = normalize(mirror(l, normal));
+            double cosAlpha = dot(r, view);
+
+            if(cosAlpha >= 0.0)
+                specColor += material.specular
+                            * std::pow(cosAlpha, material.shininess);
+        }
+
+        color += light.color * (diffColor + specColor);
+    }
 
     /** \todo
     * Compute the Phong lighting:

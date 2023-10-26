@@ -12,6 +12,8 @@
 
 //== includes =================================================================
 
+#define _MINWINDEF_ // Ansonsten wird auf Win10 irgendeine 'minwindef.h' inkludiert, die ein Makro 'min' definiert
+
 #include "utils/Object.h"
 #include "utils/Light.h"
 #include "utils/Ray.h"
@@ -58,6 +60,16 @@ private:
     bool intersect_scene(const Ray& ray, Material& intersection_material,
                          vec3& intersection_point, vec3& intersection_normal,
                          double& intersection_distance);
+
+    /**
+     * @brief Überprüft, ob der Weg zwischen einem Punkt und einer Lichtquelle
+     * blockiert weg, d.h. ob der Punkt im Schatten der Lichtquelle liegt.
+     * 
+     * @param point Der, zu überprüfende, Punkt.
+     * @param light Die Positon der Lichtquelle.
+     * @return Ein Wahrheitswert der angibt, ob der Punkt im Schatten liegt.
+     */
+    bool shadow(const vec3& point, const vec3& light);
 
     /// Computes the phong lighting.
     /**

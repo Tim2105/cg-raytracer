@@ -167,11 +167,13 @@ bool Mesh::read_obj(const char* _filename)
                     t.iuv0 = uv[0];
                     t.iuv1 = uv[1];
                     t.iuv2 = uv[2];
+                    [[fallthrough]];
                 case NORMALS:
                     // format: index0//normal0 index1//normal1 index2//normal2
                     lineData >> t.i0 >> d2 >> d2 >> d1;
                     lineData >> t.i1 >> d2 >> d2 >> d1;
                     lineData >> t.i2 >> d2 >> d2 >> d1;
+                    [[fallthrough]];
                 case NONE:
                     // format: index0 index1 index2
                     lineData >> t.i0 >> t.i1 >> t.i2;
@@ -275,7 +277,7 @@ bool Mesh::read_mtl(std::string path, std::vector<Image>& textures)
             unsigned int texnr = 0;
             unsigned int combinedW = 0;
 
-            for (int i = 0; i < textures.size(); i++)
+            for (size_t i = 0; i < textures.size(); i++)
             {
                 if (x >= combinedW + textures[i].width())
                 {
@@ -350,6 +352,8 @@ void Mesh::compute_bounding_box()
 
 bool Mesh::intersect_bounding_box(const Ray& ray) const
 {
+    UNUSED(ray);
+
     /** \todo
     * Intersect the ray `_ray` with the axis-aligned bounding box of the mesh.
     * Note that the minimum and maximum point of the bounding box are stored
@@ -424,6 +428,13 @@ bool Mesh::intersect_triangle(const Triangle& triangle, const Ray& ray,
 {
     intersection_diffuse = material_.diffuse;
 
+    UNUSED(triangle);
+    UNUSED(ray);
+    UNUSED(intersection_point);
+    UNUSED(intersection_normal);
+    UNUSED(intersection_diffuse);
+    UNUSED(intersection_distance);
+
     /** \todo
     * Intersect ray with triangle:
     * - store intersection point in `intersection_point`
@@ -437,10 +448,10 @@ bool Mesh::intersect_triangle(const Triangle& triangle, const Ray& ray,
     * system for a, b and t.
     * Refer to [Cramer's Rule](https://en.wikipedia.org/wiki/Cramer%27s_rule) to easily solve it.
      */
-    const vec3& p0 = vertices_[triangle.i0].position;
-    const vec3& p1 = vertices_[triangle.i1].position;
-    const vec3& p2 = vertices_[triangle.i2].position;
 
+    // const vec3& p0 = vertices_[triangle.i0].position;
+    // const vec3& p1 = vertices_[triangle.i1].position;
+    // const vec3& p2 = vertices_[triangle.i2].position;
 
         /** \todo
     * (optional) Support textured triangles:

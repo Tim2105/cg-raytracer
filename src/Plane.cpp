@@ -25,6 +25,11 @@ bool Plane::intersect(const Ray& ray, vec3& intersection_point,
 {
     intersection_diffuse = material_.diffuse;
 
+    UNUSED(ray);
+    UNUSED(intersection_point);
+    UNUSED(intersection_normal);
+    UNUSED(intersection_distance);
+
     /** \todo
  * - compute the intersection of the plane with `ray`
  * - if ray and plane are parallel there is no intersection

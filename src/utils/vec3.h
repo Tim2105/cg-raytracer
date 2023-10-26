@@ -17,6 +17,8 @@
 #include <math.h>
 #include <algorithm>
 
+#define UNUSED(x) (void)(x)
+
 //== CLASS DEFINITION =========================================================
 
 /// \file vec3.h Implements the vector class and its mathematical operations.
@@ -50,7 +52,7 @@ public:
     }
 
     /// read the _i'th vector component (_i from 0 to 2)
-    const double operator[](unsigned int _i) const
+    double operator[](unsigned int _i) const
     {
         assert(_i < 3);
         return data_[_i];
@@ -156,19 +158,19 @@ inline const vec3 max(const vec3& v0, const vec3& v1)
 }
 
 /// compute the Euclidean dot product of \c v0 and \c v1
-inline const double dot(const vec3& v0, const vec3& v1)
+inline double dot(const vec3& v0, const vec3& v1)
 {
     return (v0[0] * v1[0] + v0[1] * v1[1] + v0[2] * v1[2]);
 }
 
 /// compute the Euclidean norm (length) of a vector \c v
-inline const double norm(const vec3& v)
+inline double norm(const vec3& v)
 {
     return sqrt(dot(v, v));
 }
 
 /// compute the Squared Euclidean norm (length) of a vector \c v
-inline const double normSq(const vec3& v)
+inline double normSq(const vec3& v)
 {
     return dot(v, v);
 }
@@ -185,7 +187,7 @@ inline const vec3 normalize(const vec3& v)
 }
 
 /// compute the distance between vectors \c v0 and \c v1
-inline const double distance(const vec3& v0, const vec3& v1)
+inline double distance(const vec3& v0, const vec3& v1)
 {
     return norm(v0 - v1);
 }
