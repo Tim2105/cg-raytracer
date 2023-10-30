@@ -30,11 +30,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Behandlung von Warnungen
 add_compile_options(-Wall -Wextra -Werror)
 
-# Füge Optimierungen hinzu
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Ofast")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -mavx2")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto=auto")
-
 # our data
 add_definitions(-DSCENE_PATH="${CMAKE_SOURCE_DIR}/scenes/")
 

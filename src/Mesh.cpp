@@ -393,7 +393,7 @@ bool Mesh::intersect(const Ray& ray, vec3& intersection_point,
     }
 
     vec3 p, n, d;
-    double t;
+    double t = 0.0;
 
     intersection_distance = DBL_MAX;
 
