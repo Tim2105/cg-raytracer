@@ -153,7 +153,7 @@ void Raytracer::compute_image()
 
 
     // uncomment the following line to use multithreading
-    // #pragma omp parallel for
+    #pragma omp parallel for
     for (int x = 0; x < camera_.width_; ++x)
     {
         for (int y = 0; y < camera_.height_; ++y)
@@ -208,17 +208,6 @@ vec3 Raytracer::trace(const Ray& ray, int depth)
 
         color = (1 - material.mirror) * color + material.mirror * reflectedColor;
     }
-
-    //std::cout << color << std::endl;
-
-    /** \todo
-     * Compute reflections by recursive ray tracing:
-     * - check whether `object` is reflective by checking its `material.mirror`
-     * - check recursion depth
-     * - generate reflected ray, compute its color contribution, and mix it with
-     * the color computed by local Phong lighthing (use `material.mirror` as weight)
-     * - check whether your recursive algorithm reflects the ray `max_depth_` times
-     */
 
 
     return color;
@@ -298,20 +287,6 @@ vec3 Raytracer::lighting(const vec3& point, const vec3& normal,
 
         color += light.color * (diffColor + specColor);
     }
-
-    /** \todo
-    * Compute the Phong lighting:
-    * - start with global ambient contribution
-    * - for each light source (stored in vector `lights_`) add diffuse and specular contribution
-    * - only add diffuse and specular light if object is not in shadow
-    *
-    * Hints:
-    * - All object specific material parameters (material's diffuse, specular, shininess) can be found in `material`.
-    * - The ambient light intensity parameter is defined as `ambience_`.
-    * - Use the lights' member `color` for both diffuse and specular light intensity.
-    * - Feel free to use the existing vector functions in `utils/vec3.h` e.g. mirror, reflect, norm, dot, normalize
-    */
-
 
     return color;
 }
