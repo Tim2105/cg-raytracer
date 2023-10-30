@@ -201,6 +201,14 @@ vec3 Raytracer::trace(const Ray& ray, int depth)
 
     vec3 color = lighting(point, normal, -ray.direction_, material);
 
+    if(material.mirror > 0.0) {
+        vec3 reflectedDirection = mirror(-ray.direction_, normal);
+        Ray reflectedRay(point, reflectedDirection);
+        vec3 reflectedColor = trace(reflectedRay, depth + 1);
+
+        color = (1 - material.mirror) * color + material.mirror * reflectedColor;
+    }
+
     //std::cout << color << std::endl;
 
     /** \todo

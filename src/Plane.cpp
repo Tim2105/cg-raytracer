@@ -25,20 +25,23 @@ bool Plane::intersect(const Ray& ray, vec3& intersection_point,
 {
     intersection_diffuse = material_.diffuse;
 
-    UNUSED(ray);
-    UNUSED(intersection_point);
-    UNUSED(intersection_normal);
-    UNUSED(intersection_distance);
+    vec3 normal = normalize(normal_);
+    double normalDirDot = dot(normal, ray.direction_);
 
-    /** \todo
- * - compute the intersection of the plane with `ray`
- * - if ray and plane are parallel there is no intersection
- * - otherwise compute intersection data and store it in `intersection_point`, `intersection_normal`, and `intersection_distance`.
- * - return whether there is an intersection for t>1e-5 (avoids "shadow acne").
-*/
+    if(normalDirDot == 0.0)
+        return false;
 
+    double distToOrigin = dot(normal, center_);
+    intersection_distance = (-dot(normal, ray.origin_) + distToOrigin) /
+                              normalDirDot;
 
-    return false;
+    if(intersection_distance <= 1e-5)
+        return false;
+
+    intersection_normal = normal;
+    intersection_point = ray(intersection_distance);
+
+    return true;
 }
 
 //=============================================================================
