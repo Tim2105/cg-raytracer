@@ -419,6 +419,35 @@ bool Mesh::intersect(const Ray& ray, vec3& intersection_point,
 }
 
 //-----------------------------------------------------------------------------
+class Mat3x3 {
+    private:
+        double data[9] = {0};
+
+    public:
+        constexpr Mat3x3(const vec3& c1, const vec3& c2, const vec3& c3) {
+            data[0] = c1[0];
+            data[1] = c2[0];
+            data[2] = c3[0];
+            data[3] = c1[1];
+            data[4] = c2[1];
+            data[5] = c3[1];
+            data[6] = c1[2];
+            data[7] = c2[2];
+            data[8] = c3[2];
+        }
+
+        /**
+         * @brief Berechne die Determinante mit der Regel von Sarrus
+         */
+        constexpr double determinant() {
+            return data[0] * data[4] * data[8] +
+                   data[1] * data[5] * data[6] +
+                   data[2] * data[3] * data[7] -
+                   data[2] * data[4] * data[6] -
+                   data[1] * data[3] * data[8] -
+                   data[0] * data[5] * data[7];
+        }
+};
 
 bool Mesh::intersect_triangle(const Triangle& triangle, const Ray& ray,
                               vec3& intersection_point,
@@ -427,13 +456,43 @@ bool Mesh::intersect_triangle(const Triangle& triangle, const Ray& ray,
                               double& intersection_distance) const
 {
     intersection_diffuse = material_.diffuse;
+    
+    // Berechne die Lösungen des Systems
+    // origin - pA = beta(pB - pA) + gamma(pC - pA) - t * direction
+    vec3 pA = vertices_[triangle.i0].position;
+    vec3 pB = vertices_[triangle.i1].position;
+    vec3 pC = vertices_[triangle.i2].position;
 
-    UNUSED(triangle);
-    UNUSED(ray);
-    UNUSED(intersection_point);
-    UNUSED(intersection_normal);
-    UNUSED(intersection_diffuse);
-    UNUSED(intersection_distance);
+    // Mithilfe der Cramer'schen Regel
+    Mat3x3 mA(pB - pA, pC - pA, -ray.direction_);
+    Mat3x3 mA1(ray.origin_ - pA, pC - pA, -ray.direction_);
+    Mat3x3 mA2(pB - pA, ray.origin_ - pA, -ray.direction_);
+    Mat3x3 mA3(pB - pA, pC - pA, ray.origin_ - pA);
+
+    double detA = mA.determinant();
+    
+    // Wenn die Determinante von mA = 0 ist, hat das LGS keine Lösung
+    if(detA == 0.0)
+        return false;
+
+    double beta = mA1.determinant() / detA;
+    double gamma = mA2.determinant() / detA;
+    double t = mA3.determinant() / detA;
+
+    // Wenn beta oder gamma negativ sind, oder beta + gamma > 1,
+    // liegt der Schnittpunkt nicht im Dreieck
+    if(beta < 0.0 || gamma < 0.0 || beta + gamma > 1.0)
+        return false;
+
+    // Wenn t < Eplison, schneidet der Strahl nicht in positive Richtung
+    if(t <= 1e-5)
+        return false;
+
+    intersection_point = ray(t);
+    intersection_normal = triangle.normal;
+    intersection_distance = t;
+
+    return true;
 
     /** \todo
     * Intersect ray with triangle:
@@ -464,9 +523,6 @@ bool Mesh::intersect_triangle(const Triangle& triangle, const Ray& ray,
     * Use `material.shadowable` in the `lighting(...)` function to prevent it from being shadowed.
     * (`material.shadowable` is already set to false for the sky mesh and true for all other meshes, so you don't have to set it by yourself)
      */
-
-
-    return true;
 }
 
 //=============================================================================
