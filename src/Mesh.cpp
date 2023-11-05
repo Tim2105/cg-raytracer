@@ -329,8 +329,21 @@ void Mesh::compute_normals()
         const vec3& p0 = vertices_[t.i0].position;
         const vec3& p1 = vertices_[t.i1].position;
         const vec3& p2 = vertices_[t.i2].position;
+        
         t.normal = normalize(cross(p1 - p0, p2 - p0));
+
+        vec3 p0ToP1 = p1 - p0;
+        vec3 p0ToP2 = p2 - p0;
+        vec3 p1ToP2 = p2 - p1;
+
+        vertices_[t.i0].normal += angle(p0ToP1, p0ToP2) * t.normal;
+        vertices_[t.i1].normal += angle(p0ToP1, p1ToP2) * t.normal;
+        vertices_[t.i2].normal += angle(p0ToP2, p1ToP2) * t.normal;
     }
+
+    // Normiere alle Vertex-Normalen
+    for (Vertex& v : vertices_)
+        v.normal = normalize(v.normal);
 
 }
 
@@ -489,28 +502,23 @@ bool Mesh::intersect_triangle(const Triangle& triangle, const Ray& ray,
         return false;
 
     intersection_point = ray(t);
-    intersection_normal = triangle.normal;
     intersection_distance = t;
 
+    // Berechne die Normale des Schnittpunkts
+    if(draw_mode_ == PHONG) {
+        // Smooth Shading
+        double alpha = 1.0 - beta - gamma;
+
+        vec3 interpolNormal(0.0);
+        interpolNormal += alpha * vertices_[triangle.i0].normal;
+        interpolNormal += beta * vertices_[triangle.i1].normal;
+        interpolNormal += gamma * vertices_[triangle.i2].normal;
+
+        intersection_normal = normalize(interpolNormal);
+    } else // Flat Shading
+        intersection_normal = triangle.normal;
+
     return true;
-
-    /** \todo
-    * Intersect ray with triangle:
-    * - store intersection point in `intersection_point`
-    * - store ray parameter in `intersection_distance`
-    * - store normal at intersection point in `intersection_normal`.
-    * - Depending on the member variable `draw_mode_`, use either the triangle
-    *  normal (`Triangle::normal`) or interpolate the vertex normals (`Vertex::normal`).
-    * - return `true` if there is an intersection with t > 1e-5 (avoid "shadow acne")
-    *
-    * Hint: Rearrange `ray.origin + t*ray.dir = a*p0 + b*p1 + (1-a-b)*p2` to obtain a solvable
-    * system for a, b and t.
-    * Refer to [Cramer's Rule](https://en.wikipedia.org/wiki/Cramer%27s_rule) to easily solve it.
-     */
-
-    // const vec3& p0 = vertices_[triangle.i0].position;
-    // const vec3& p1 = vertices_[triangle.i1].position;
-    // const vec3& p2 = vertices_[triangle.i2].position;
 
         /** \todo
     * (optional) Support textured triangles:

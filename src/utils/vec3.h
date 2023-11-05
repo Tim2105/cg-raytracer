@@ -175,6 +175,10 @@ inline double normSq(const vec3& v)
     return dot(v, v);
 }
 
+inline double angle(const vec3& v1, const vec3& v2) {
+    return std::acos(dot(v1, v2) / (norm(v1) * norm(v2)));
+}
+
 /// normalize vector \c v by dividing it by its norm
 inline const vec3 normalize(const vec3& v)
 {
