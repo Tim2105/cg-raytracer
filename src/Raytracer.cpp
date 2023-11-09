@@ -151,6 +151,21 @@ void Raytracer::compute_image()
      * - Try to avoid sqrt computations like in norm when you want to compute a color difference, use normSq instead
      */
 
+    constexpr size_t supersamplingN = 4;
+    double pixelStepSize = 1.0 / supersamplingN;
+    double pixelOffsets[supersamplingN][supersamplingN][2];
+
+    double xOffset = -0.5 + pixelStepSize / 2;
+    for(size_t i = 0; i < supersamplingN; i++) {
+        double yOffset = -0.5 + pixelStepSize / 2;
+        for(size_t j = 0; j < supersamplingN; j++) {
+            pixelOffsets[i][j][0] = xOffset;
+            pixelOffsets[i][j][1] = yOffset;
+
+            yOffset += pixelStepSize;
+        }
+        xOffset += pixelStepSize;
+    }
 
     // uncomment the following line to use multithreading
     #pragma omp parallel for
@@ -158,8 +173,19 @@ void Raytracer::compute_image()
     {
         for (int y = 0; y < camera_.height_; ++y)
         {
-            Ray ray = camera_.primary_ray(x, y);
-            vec3 color = trace(ray, 0);
+            // Ray ray = camera_.primary_ray(x, y);
+            // vec3 color = trace(ray, 0);
+
+            vec3 color(0.0);
+
+            for(size_t i = 0; i < supersamplingN; i++) {
+                for(size_t j = 0; j < supersamplingN; j++) {
+                    Ray ray = camera_.primary_ray(x + pixelOffsets[i][j][0],
+                                                  y + pixelOffsets[i][j][1]);
+
+                    color += trace(ray, 0) / (supersamplingN * supersamplingN);
+                }
+            }
 
             // avoid over-saturation
             color = min(color, vec3(1, 1, 1));
@@ -265,7 +291,7 @@ vec3 Raytracer::lighting(const vec3& point, const vec3& normal,
     color += ambience_ * material.ambient;
 
     for(Light light: lights_) {
-        if(shadow(point, light.position))
+        if(material.shadowable && shadow(point, light.position))
             continue;
 
         vec3 l = normalize(light.position - point);

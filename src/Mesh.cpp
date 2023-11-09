@@ -365,30 +365,37 @@ void Mesh::compute_bounding_box()
 
 bool Mesh::intersect_bounding_box(const Ray& ray) const
 {
-    UNUSED(ray);
+    double t1, t2, tMin = 0.0, tMax = DBL_MAX;
 
-    /** \todo
-    * Intersect the ray `_ray` with the axis-aligned bounding box of the mesh.
-    * Note that the minimum and maximum point of the bounding box are stored
-    * in the member variables `bb_min_` and `bb_max_`. Return whether the ray
-    * intersects the bounding box.
-    *
-    * Hints:
-    * - The box intersection is basically a combination of 6 plane/ray intersections.
-    * - The resulting intersection point has to be checked against the lower and upper bounds `bb_min_` and `bb_max_`.
-    * - The intersection tests can be done easier than the existing general ray/plane intersection because the planes are axis aligned.
-    * - One positive intersection is sufficient to return true.
-    * - It helps to visualize a 2D ray/rectangle intersection on a sheet of paper.
-    * - To debug your bounding box code, comment out your triangle intersection test (return true at the beginning) and test
-    *   the cube or toon_faces scene. You should see the black bounding boxes, if everything is correct.
-    * - There are other (faster) ray/box intersection approaches, feel free to implement one of those instead.
-    *
-    * Note:
-    * This function is used in `Mesh::intersect()` to avoid the intersection test
-    * with all triangles of every mesh in the scene. The bounding boxes are computed
-    * in `Mesh::compute_bounding_box()`.
-    */
+    // Durchlaufe alle Koordinaten
+    for(size_t i = 0; i < 3; i++) {
+        // Sonderfall: d_i = 0
+        if(std::abs(ray.direction_[i]) <= DBL_MIN) {
+            if(ray.origin_[i] < bb_min_[i] || ray.origin_[i] > bb_max_[i])
+                return false;
+        } else {
+            // Schnittdistanz 1
+            t1 = (bb_min_[i] - ray.origin_[i]) / ray.direction_[i];
+            // Schnittdistanz 2
+            t2 = (bb_max_[i] - ray.origin_[i]) / ray.direction_[i];
 
+            // Sorge für t1 <= t2
+            if(t1 > t2)
+                std::swap(t1, t2);
+
+            // Überschreibe t1 in tMin, wenn t1 > 0
+            if(t1 > tMin)
+                tMin = t1;
+            
+            tMax = t2;
+
+            // Vergleiche tMin und tMax (müssen auch >= 0 sein)
+            if(tMin > tMax)
+                return false;
+            if(tMax < 0.0)
+                return false;
+        }
+    }
 
     return true;
 }
@@ -467,9 +474,7 @@ bool Mesh::intersect_triangle(const Triangle& triangle, const Ray& ray,
                               vec3& intersection_normal,
                               vec3& intersection_diffuse,
                               double& intersection_distance) const
-{
-    intersection_diffuse = material_.diffuse;
-    
+{   
     // Berechne die Lösungen des Systems
     // origin - pA = beta(pB - pA) + gamma(pC - pA) - t * direction
     vec3 pA = vertices_[triangle.i0].position;
@@ -518,19 +523,24 @@ bool Mesh::intersect_triangle(const Triangle& triangle, const Ray& ray,
     } else // Flat Shading
         intersection_normal = triangle.normal;
 
-    return true;
+    if(hasTexture_) {
+        double alpha = 1.0 - beta - gamma;
+        double uRel = alpha * u_coordinates_[triangle.iuv0] + 
+                        beta * u_coordinates_[triangle.iuv1] +
+                        gamma * u_coordinates_[triangle.iuv2];
 
-        /** \todo
-    * (optional) Support textured triangles:
-    * - `hasTexture_` indicates if the mesh is textured.
-    * - Acces the three u and v texture coordinates stored in `u_coordinates` resp. `v_coordinates` via the triangles iuv indices.
-    * - Interpolate the uv-coordinates using your barycentric coordinates to get the intersection point's uv.
-    * - Convert the relative uv coordinates (from 0 to 1) to absolute pixel coordinates (from 0 to width/height - 1 of `texture_`)
-    * - Store the resulting texture color in `intersection_diffuse`
-    * - You will notice that there will be shadows on the sky mesh in the pokemon scene.
-    * Use `material.shadowable` in the `lighting(...)` function to prevent it from being shadowed.
-    * (`material.shadowable` is already set to false for the sky mesh and true for all other meshes, so you don't have to set it by yourself)
-     */
+        double vRel = alpha * v_coordinates_[triangle.iuv0] + 
+                        beta * v_coordinates_[triangle.iuv1] +
+                        gamma * v_coordinates_[triangle.iuv2];
+
+        int uPixel = uRel * texture_.width();
+        int vPixel = vRel * texture_.height();
+
+        intersection_diffuse = texture_(uPixel, vPixel);
+    } else
+        intersection_diffuse = material_.diffuse;
+
+    return true;
 }
 
 //=============================================================================
