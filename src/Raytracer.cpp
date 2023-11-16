@@ -128,6 +128,28 @@ void Raytracer::read_scene(const std::string& filename)
 
 //-----------------------------------------------------------------------------
 
+#include <functional>
+
+template <size_t n>
+void genOffsets(double pixelOffsets[n][n][2]) {
+    double pixelStepSize = 1.0 / n;
+
+    double xOffset = -0.5 + pixelStepSize / 2;
+    for(size_t i = 0; i < n; i++) {
+        double yOffset = -0.5 + pixelStepSize / 2;
+        for(size_t j = 0; j < n; j++) {
+            pixelOffsets[i][j][0] = xOffset;
+            pixelOffsets[i][j][1] = yOffset;
+
+            yOffset += pixelStepSize;
+        }
+        xOffset += pixelStepSize;
+    }
+}
+
+// template <size_t n>
+// void ssTrace()
+
 void Raytracer::compute_image()
 {
     // allocate memory by resizing image
@@ -151,22 +173,6 @@ void Raytracer::compute_image()
      * - Try to avoid sqrt computations like in norm when you want to compute a color difference, use normSq instead
      */
 
-    constexpr size_t supersamplingN = 4;
-    double pixelStepSize = 1.0 / supersamplingN;
-    double pixelOffsets[supersamplingN][supersamplingN][2];
-
-    double xOffset = -0.5 + pixelStepSize / 2;
-    for(size_t i = 0; i < supersamplingN; i++) {
-        double yOffset = -0.5 + pixelStepSize / 2;
-        for(size_t j = 0; j < supersamplingN; j++) {
-            pixelOffsets[i][j][0] = xOffset;
-            pixelOffsets[i][j][1] = yOffset;
-
-            yOffset += pixelStepSize;
-        }
-        xOffset += pixelStepSize;
-    }
-
     // uncomment the following line to use multithreading
     #pragma omp parallel for
     for (int x = 0; x < camera_.width_; ++x)
@@ -177,13 +183,43 @@ void Raytracer::compute_image()
             // vec3 color = trace(ray, 0);
 
             vec3 color(0.0);
+            vec3 minColor(1.0), maxColor(0.0);
 
-            for(size_t i = 0; i < supersamplingN; i++) {
-                for(size_t j = 0; j < supersamplingN; j++) {
-                    Ray ray = camera_.primary_ray(x + pixelOffsets[i][j][0],
-                                                  y + pixelOffsets[i][j][1]);
+            double offsets[2][2][2];
+            genOffsets<2>(offsets);
 
-                    color += trace(ray, 0) / (supersamplingN * supersamplingN);
+            vec3 colors[2][2];
+
+            for(size_t i = 0; i < 2; i++) {
+                for(size_t j = 0; j < 2; j++) {
+                    Ray ray = camera_.primary_ray(x + offsets[i][j][0],
+                                                    y + offsets[i][j][1]);
+
+                    colors[i][j] = trace(ray, 0);
+                    color += colors[i][j] / 4;
+                    minColor = min(minColor, colors[i][j]);
+                    maxColor = max(maxColor, colors[i][j]);
+                }
+            }
+
+            bool repeatSS = norm(maxColor - minColor) > 0.02;
+
+            if(repeatSS) {
+                color = vec3(0.0);
+
+                double offsets[4][4][2];
+                genOffsets<4>(offsets);
+
+                vec3 colors[4][4];
+
+                for(size_t i = 0; i < 4; i++) {
+                    for(size_t j = 0; j < 4; j++) {
+                        Ray ray = camera_.primary_ray(x + offsets[i][j][0],
+                                                        y + offsets[i][j][1]);
+
+                        colors[i][j] = trace(ray, 0);
+                        color += colors[i][j] / 16;
+                    }
                 }
             }
 

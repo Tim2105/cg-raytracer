@@ -306,17 +306,6 @@ bool Mesh::read_mtl(std::string path, std::vector<Image>& textures)
 
 void Mesh::compute_normals()
 {
-    /** \todo
-     * In some scenes (e.g the office scene) some objects have to be flat
-     * shaded (e.g. the desk) while other objects should be Phong shaded to appear
-     * realistic (e.g. chairs). We provide code to compute triangle normals. You have to
-     * implement the following:
-     * - Compute vertex normals by averaging the normals of their incident triangles.
-     * - Store the vertex normals in the Vertex::normal member variable.
-     * - Weigh the normals by their triangles' angles.
-     */
-
-
     // initialize vertex normals to zero
     for (Vertex& v : vertices_)
     {
